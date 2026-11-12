@@ -23,7 +23,10 @@ def criar_evento(
     dados: EventoCreate,
     db: Session = Depends(get_db)
 ):
-    db.execute(text("BEGIN IMMEDIATE"))
+    if db.get_bind().dialect.name == "sqlite":
+        db.execute(text("BEGIN IMMEDIATE"))
+    else:
+        db.execute(text("LOCK TABLE eventos IN EXCLUSIVE MODE"))
     maior_id = max(db.query(func.max(Evento.id)).scalar() or 0, db.query(func.max(Ingresso.evento_id)).scalar() or 0)
     novo_evento = Evento(
         id=maior_id + 1,

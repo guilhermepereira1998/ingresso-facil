@@ -1,5 +1,10 @@
 
 from pathlib import Path
+import os
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).resolve().parent.parent / ".env", encoding="utf-8-sig")
+from sqlalchemy.engine import make_url
 from sqlalchemy import (
     create_engine,
     Column,
@@ -12,8 +17,16 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import declarative_base
 
-# Conexão com o banco de dados SQLite
-db = create_engine(f"sqlite:///{Path(__file__).resolve().parent / 'banco.db'}", connect_args={"check_same_thread": False})
+# DATABASE_URL fica apenas no ambiente do servidor, nunca no site ou no Git.
+database_url = os.environ.get("DATABASE_URL", f"sqlite:///{Path(__file__).resolve().parent / 'banco.db'}")
+if database_url.startswith("postgres://"):
+    database_url = "postgresql+psycopg://" + database_url[len("postgres://"):]
+elif database_url.startswith("postgresql://"):
+    database_url = "postgresql+psycopg://" + database_url[len("postgresql://"):]
+url = make_url(database_url)
+if url.get_backend_name() == "postgresql":
+    url = url.update_query_dict({"sslmode": url.query.get("sslmode", "require")})
+db = create_engine(url, pool_pre_ping=True, connect_args={"check_same_thread": False} if url.get_backend_name() == "sqlite" else {})
 
 Base = declarative_base()
 

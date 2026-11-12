@@ -23,7 +23,10 @@ def criar_participante(
     dados: ParticipanteCreate,
     db: Session = Depends(get_db)
 ):
-    db.execute(text("BEGIN IMMEDIATE"))
+    if db.get_bind().dialect.name == "sqlite":
+        db.execute(text("BEGIN IMMEDIATE"))
+    else:
+        db.execute(text("LOCK TABLE participantes IN EXCLUSIVE MODE"))
     participante_existente = db.query(Participante).filter(
         Participante.email == dados.email
     ).first()

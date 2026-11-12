@@ -27,7 +27,10 @@ def emitir_ingresso(
     dados: IngressoCreate,
     db: Session = Depends(get_db)
 ):
-    db.execute(text("BEGIN IMMEDIATE"))
+    if db.get_bind().dialect.name == "sqlite":
+        db.execute(text("BEGIN IMMEDIATE"))
+    else:
+        db.execute(text("LOCK TABLE eventos IN EXCLUSIVE MODE"))
     evento = db.query(Evento).filter(
         Evento.id == evento_id
     ).first()
