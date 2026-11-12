@@ -1,0 +1,30 @@
+INGRESSO FÁCIL — FRONT-END + API + BANCO DE DADOS
+
+Este pacote contém o site na pasta site e a API Python baseada no projeto enviado na pasta backend. O banco SQLite enviado está em backend/banco.db; guarde cópias de segurança. O navegador acessa a API em /api e os cadastros ficam registrados no banco. A aplicação não realiza pagamentos.
+
+EXECUÇÃO NO WINDOWS
+1. Instale Python 3.10 ou superior, incluindo a opção de adicionar Python ao PATH.
+2. Extraia todo o ZIP e execute iniciar.bat.
+3. Aguarde a instalação e abra http://127.0.0.1:8000 no navegador.
+4. Para finalizar, feche a janela do servidor. Para reiniciar depois, execute iniciar.bat de novo.
+A documentação interativa da API está em http://127.0.0.1:8000/docs.
+
+EXECUÇÃO MANUAL
+Na pasta backend, crie um ambiente virtual, instale requirements.txt e execute uvicorn main:app --host 127.0.0.1 --port 8000. Abra http://127.0.0.1:8000.
+
+NETLIFY
+O Netlify pode hospedar a pasta site, mas a API Python e o arquivo SQLite precisam rodar em um servidor separado com armazenamento persistente. Arrastar somente o site ao Netlify não executa o Python nem conecta o banco automaticamente. Prepare o servidor da API com HTTPS, persistência e proteção de acesso. Depois configure um proxy no Netlify: crie dentro de site um arquivo chamado _redirects com a linha abaixo, substituindo o endereço pelo da API efetivamente publicada:
+/api/* https://SEU-SERVIDOR-API.example/api/:splat 200
+Publique a pasta site no Netlify. O endereço do servidor é apenas exemplo; teste a leitura e a gravação após a publicação. Não envie a pasta backend nem banco.db para a pasta pública do Netlify.
+
+DADOS JÁ EXISTENTES
+O banco recebido contém um ingresso associado ao evento de ID 10, que não existe no cadastro de eventos. O registro original foi preservado para conferência. Os novos cadastros de eventos evitam reutilizar esse ID e associar o ingresso automaticamente ao evento errado. Revise o registro original antes de decidir corrigi-lo.
+
+EQUIPE
+A seção de equipe inclui as atribuições individuais informadas para o portfólio do projeto.
+
+SEGURANÇA
+Esta versão é destinada a demonstração acadêmica e não inclui autenticação ou controle de permissões. Quem tiver acesso à API poderá consultar e alterar os dados. Antes de disponibilizá-la ao público ou usar dados pessoais reais, implemente autenticação e autorização, proteja o banco e faça testes de segurança. Uma cópia local do banco foi incluída no pacote; compartilhe-o apenas com pessoas autorizadas.
+
+REPOSITORIO GITHUB
+O banco local original nao e versionado. Na primeira execucao, a API cria backend/banco.db vazio. O banco original foi preservado na pasta de origem; a conferencia identificou um ingresso associado ao evento inexistente de ID 10.
