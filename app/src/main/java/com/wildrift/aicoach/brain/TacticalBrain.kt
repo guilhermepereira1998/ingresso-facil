@@ -7,12 +7,14 @@ class TacticalBrain(
     private val localRuleEngine: LocalRuleEngine = LocalRuleEngine(),
     private val cloudMacroClient: CloudMacroClient = CloudMacroClient()
 ) {
-    suspend fun analyze(rawSnapshot: GameStateSnapshot, cloudEndpointUrl: String, onImmediate: ((List<TacticalCallout>) -> Unit)? = null): List<TacticalCallout> {
+    val cloudStatus: String get() = cloudMacroClient.status
+
+    suspend fun analyze(rawSnapshot: GameStateSnapshot, cloudEndpointUrl: String, cloudAccessToken: String = "", onImmediate: ((List<TacticalCallout>) -> Unit)? = null): List<TacticalCallout> {
         val cleanSnapshot = sanityFilter.validate(rawSnapshot) ?: return emptyList()
 
         val immediateCalls = localRuleEngine.evaluate(cleanSnapshot).toMutableList()
         onImmediate?.invoke(immediateCalls)
-        val cloudCall = cloudMacroClient.fetchMacroAdviceIfDue(cloudEndpointUrl, cleanSnapshot)
+        val cloudCall = cloudMacroClient.fetchMacroAdviceIfDue(cloudEndpointUrl, cleanSnapshot, cloudAccessToken)
         if (cloudCall != null) {
             immediateCalls.add(cloudCall)
         }

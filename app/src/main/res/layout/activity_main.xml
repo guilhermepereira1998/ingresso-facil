@@ -97,6 +97,17 @@
                 android:inputType="textUri"
                 android:textColor="@color/text_primary"
                 android:textColorHint="@color/text_secondary" />
+
+            <EditText
+                android:id="@+id/etCloudToken"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:hint="Token de acesso do servidor de IA"
+                android:inputType="textPassword"
+                android:importantForAutofill="no"
+                android:textColor="@color/text_primary"
+                android:textColorHint="@color/text_secondary" />
         </LinearLayout>
 
         <Button

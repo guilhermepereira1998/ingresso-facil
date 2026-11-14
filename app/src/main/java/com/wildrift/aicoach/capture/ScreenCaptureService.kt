@@ -41,6 +41,7 @@ class ScreenCaptureService : Service() {
         const val EXTRA_RESULT_DATA = "extra_result_data"
         const val EXTRA_PLAYER_LANE = "extra_player_lane"
         const val EXTRA_CLOUD_URL = "extra_cloud_url"
+        const val EXTRA_CLOUD_TOKEN = "extra_cloud_token"
         private const val NOTIFICATION_ID = 1001
         private const val CHANNEL_ID = "wr_capture_channel"
         @Volatile var isPaused = false
@@ -118,7 +119,7 @@ class ScreenCaptureService : Service() {
             isRunning = true
             val overlay = Intent(this, FloatingOverlayService::class.java)
             if (Build.VERSION.SDK_INT >= 26) startForegroundService(overlay) else startService(overlay)
-            startCaptureLoop(intent.getStringExtra(EXTRA_PLAYER_LANE) ?: "Mid", intent.getStringExtra(EXTRA_CLOUD_URL).orEmpty())
+            startCaptureLoop(intent.getStringExtra(EXTRA_PLAYER_LANE) ?: "Mid", intent.getStringExtra(EXTRA_CLOUD_URL).orEmpty(), intent.getStringExtra(EXTRA_CLOUD_TOKEN).orEmpty())
         } catch (e: Exception) {
             latestTelemetry = "Falha ao iniciar captura: ${e.javaClass.simpleName}. Autorize novamente."
             Log.e("ScreenCaptureService", latestTelemetry, e)
@@ -152,7 +153,7 @@ class ScreenCaptureService : Service() {
         }
     }
 
-    private fun startCaptureLoop(lane: String, cloudUrl: String) {
+    private fun startCaptureLoop(lane: String, cloudUrl: String, cloudToken: String) {
         captureJob = serviceScope.launch {
             val hudConfig = HudConfig.load(this@ScreenCaptureService)
             while (isActive) {
@@ -169,9 +170,10 @@ class ScreenCaptureService : Service() {
                             } else {
                                 val snapshot = visionPipeline.processFrame(bitmap, hudConfig, lane)
                                 latestTelemetry = "${snapshot.formattedClock} | Ouro: ${snapshot.currentGold}\n${visionPipeline.modelStatus}\n${snapshot.rawOcrDebug}"
-                                tacticalBrain.analyze(snapshot, cloudUrl) { calls ->
+                                tacticalBrain.analyze(snapshot, cloudUrl, cloudToken) { calls ->
                                     calls.forEach { voiceCoach.enqueue(it) }
                                 }.forEach { voiceCoach.enqueue(it) }
+                                latestTelemetry += "\nIA: ${tacticalBrain.cloudStatus}"
                             }
                         } catch (cancel: CancellationException) { throw cancel
                         } catch (e: Exception) {

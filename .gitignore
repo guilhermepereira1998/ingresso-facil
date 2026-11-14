@@ -7,3 +7,12 @@ local.properties
 *.keystore
 .env
 __pycache__/
+
+node_modules/
+.wrangler/
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+ml_training/datasets/
+ml_training/runs/
+*.pt

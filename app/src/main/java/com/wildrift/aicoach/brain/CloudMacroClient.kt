@@ -34,6 +34,8 @@ class CloudMacroClient {
 
     private val json = Json { ignoreUnknownKeys = true }
     private var lastRequestMs = 0L
+    @Volatile var status: String = "Modo local"
+        private set
 
     companion object {
         const val CLOUD_INTERVAL_MS = 20_000L
@@ -50,9 +52,12 @@ Regras estritas:
 
     suspend fun fetchMacroAdviceIfDue(
         endpointUrl: String,
-        snapshot: GameStateSnapshot
+        snapshot: GameStateSnapshot,
+        accessToken: String = ""
     ): TacticalCallout? {
-        if (!endpointUrl.startsWith("https://")) return null
+        if (endpointUrl.isBlank()) { status = "Modo local"; return null }
+        if (!endpointUrl.startsWith("https://")) { status = "URL HTTPS inválida"; return null }
+        if (accessToken.isBlank()) { status = "Token de acesso pendente"; return null }
         val now = System.currentTimeMillis()
         if (now - lastRequestMs < CLOUD_INTERVAL_MS) return null
         lastRequestMs = now
@@ -65,18 +70,29 @@ Regras estritas:
                         state = snapshot
                     )
                 )
+                status = "Consultando servidor"
                 val request = Request.Builder()
                     .url(endpointUrl)
+                    .header("Authorization", "Bearer $accessToken")
                     .post(payload.toRequestBody("application/json".toMediaType()))
                     .build()
 
                 client.newCall(request).execute().use { response ->
-                    if (!response.isSuccessful) return@use null
+                    if (!response.isSuccessful) {
+                        status = when (response.code) {
+                            401, 403 -> "Token recusado pelo servidor"
+                            429 -> "Limite do provedor atingido"
+                            503 -> "Servidor ainda não configurado"
+                            else -> "Servidor respondeu HTTP ${response.code}"
+                        }
+                        return@use null
+                    }
                     val source = response.body?.source() ?: return@use null
-                    if (source.request(65_537)) return@use null
+                    if (source.request(65_537)) { status = "Resposta excessiva rejeitada"; return@use null }
                     val body = source.readUtf8()
                     val parsed = json.decodeFromString<CloudMacroResponse>(body)
                     val trimmed = parsed.callout.trim()
+                    status = if (trimmed.isBlank()) "Conectada; sem orientação nesta leitura" else "Conectada"
                     if (trimmed.isNotEmpty() && trimmed.split(Regex("\\s+")).size <= 12) {
                         TacticalCallout(
                             ruleId = "CLOUD_LLM_MACRO",
@@ -87,7 +103,7 @@ Regras estritas:
                 }
             } catch (cancel: CancellationException) {
                 throw cancel
-            } catch (_: Exception) { null }
+            } catch (_: Exception) { status = "Sem resposta válida; modo local mantido"; null }
         }
     }
 }

@@ -31,6 +31,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tvTelemetryLog: TextView
     private lateinit var etLaneRole: EditText
     private lateinit var etCloudEndpoint: EditText
+    private lateinit var etCloudToken: EditText
 
     private val notificationPermLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -46,6 +47,7 @@ class MainActivity : AppCompatActivity() {
                 putExtra(ScreenCaptureService.EXTRA_RESULT_DATA, result.data)
                 putExtra(ScreenCaptureService.EXTRA_PLAYER_LANE, etLaneRole.text.toString().ifBlank { "Mid" })
                 putExtra(ScreenCaptureService.EXTRA_CLOUD_URL, etCloudEndpoint.text.toString().trim())
+                putExtra(ScreenCaptureService.EXTRA_CLOUD_TOKEN, etCloudToken.text.toString().trim())
             }
             ContextCompat.startForegroundService(this, captureIntent)
             Toast.makeText(this, "AI Coach iniciado! Abra o Wild Rift.", Toast.LENGTH_LONG).show()
@@ -62,10 +64,12 @@ class MainActivity : AppCompatActivity() {
         tvTelemetryLog = findViewById(R.id.tvTelemetryLog)
         etLaneRole = findViewById(R.id.etLaneRole)
         etCloudEndpoint = findViewById(R.id.etCloudEndpoint)
+        etCloudToken = findViewById(R.id.etCloudToken)
 
         val prefs = getSharedPreferences("coach_settings", MODE_PRIVATE)
         etLaneRole.setText(prefs.getString("lane", "Mid"))
         etCloudEndpoint.setText(prefs.getString("endpoint", ""))
+        etCloudToken.setText(prefs.getString("cloud_token", ""))
         androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(findViewById(android.R.id.content)) { view, insets ->
             val bars = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars())
             view.setPadding(bars.left, bars.top, bars.right, bars.bottom)
@@ -105,9 +109,14 @@ class MainActivity : AppCompatActivity() {
                 etCloudEndpoint.error = "Use uma URL HTTPS válida."
                 return@setOnClickListener
             }
+            if (cloudUrl.isNotBlank() && etCloudToken.text.toString().isBlank()) {
+                etCloudToken.error = "Informe o token do seu servidor de IA."
+                return@setOnClickListener
+            }
             getSharedPreferences("coach_settings", MODE_PRIVATE).edit()
                 .putString("lane", etLaneRole.text.toString())
-                .putString("endpoint", cloudUrl).apply()
+                .putString("endpoint", cloudUrl)
+                .putString("cloud_token", etCloudToken.text.toString().trim()).apply()
             val projectionManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
             mediaProjectionLauncher.launch(projectionManager.createScreenCaptureIntent())
         }

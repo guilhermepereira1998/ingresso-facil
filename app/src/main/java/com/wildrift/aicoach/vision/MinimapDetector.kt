@@ -4,112 +4,90 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.util.Log
 import com.wildrift.aicoach.model.MinimapDetection
-import com.wildrift.aicoach.model.MinimapEntityClass
+import org.json.JSONObject
+import org.tensorflow.lite.DataType
 import org.tensorflow.lite.Interpreter
+import org.tensorflow.lite.Tensor
 import java.io.FileInputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
-import java.nio.MappedByteBuffer
 import java.nio.channels.FileChannel
 
 class MinimapDetector(context: Context, modelAssetName: String = "yolov8n_wr_minimap_int8.tflite") {
-
     private var interpreter: Interpreter? = null
-    private val inputSize = 320
-    private val numClasses = 4
-    private val confidenceThreshold = 0.45f
-    var status: String = "Minimapa: modelo não incluído; detecção indisponível"
+    private var channelFirst = false
+    private var normalizedCoordinates = true
+    var status = "Minimapa: modelo não incluído; detecção indisponível"
         private set
 
     init {
+        var loaded: Interpreter? = null
         try {
-            val modelBuffer = loadModelFile(context, modelAssetName)
-            val options = Interpreter.Options().apply {
-                setNumThreads(2)
+            if (context.assets.list("")?.contains(modelAssetName) == true) {
+                val metadata = context.assets.open("minimap_model.json").bufferedReader().use { JSONObject(it.readText()) }
+                require(metadata.getInt("schemaVersion") == 1)
+                val classes = metadata.getJSONArray("classes")
+                val expected = listOf("aliado", "inimigo", "objetivo_ativo", "onda_minions")
+                require(classes.length() == 4 && expected.indices.all { classes.getString(it) == expected[it] })
+                val units = metadata.getString("coordinates")
+                require(units == "normalized" || units == "pixels")
+                normalizedCoordinates = units == "normalized"
+                context.assets.openFd(modelAssetName).use { descriptor ->
+                    FileInputStream(descriptor.fileDescriptor).use { stream ->
+                        val model = stream.channel.map(FileChannel.MapMode.READ_ONLY, descriptor.startOffset, descriptor.declaredLength)
+                        loaded = Interpreter(model, Interpreter.Options().apply { setNumThreads(2) })
+                    }
+                }
+                val engine = requireNotNull(loaded)
+                require(engine.inputTensorCount == 1 && engine.outputTensorCount == 1)
+                val input = engine.getInputTensor(0)
+                val shape = input.shape()
+                channelFirst = shape.contentEquals(intArrayOf(1, 3, 320, 320))
+                require(channelFirst || shape.contentEquals(intArrayOf(1, 320, 320, 3))) { "Expected 320x320 RGB input" }
+                encoding(input)
+                val output = engine.getOutputTensor(0)
+                val outShape = output.shape()
+                require(outShape.size == 3 && outShape[0] == 1 && (outShape[1] == 8 || outShape[2] == 8))
+                encoding(output)
+                interpreter = engine
+                status = "Minimapa: modelo carregado (CPU); precisão requer validação"
             }
-            interpreter = Interpreter(modelBuffer, options)
-            status = "Minimapa: modelo carregado (CPU)"
         } catch (e: Exception) {
-            Log.w("MinimapDetector", "Modelo TFLite ($modelAssetName) não encontrado em assets/. Modo fallback ativo.")
+            loaded?.close()
+            status = "Minimapa: modelo ou metadados incompatíveis"
+            Log.w("MinimapDetector", status, e)
         }
     }
 
-    fun detect(minimapBitmap320: Bitmap): List<MinimapDetection> {
-        val tflite = interpreter ?: return emptyList()
+    private fun encoding(tensor: Tensor): TensorEncoding = when (tensor.dataType()) {
+        DataType.FLOAT32 -> TensorEncoding.FLOAT32
+        DataType.UINT8 -> TensorEncoding.UINT8
+        DataType.INT8 -> TensorEncoding.INT8
+        else -> error("Unsupported tensor type: ${tensor.dataType()}")
+    }
 
-        val inputBuffer = ByteBuffer.allocateDirect(1 * inputSize * inputSize * 3 * 4).apply {
-            order(ByteOrder.nativeOrder())
-        }
-        val intValues = IntArray(inputSize * inputSize)
-        minimapBitmap320.getPixels(intValues, 0, inputSize, 0, 0, inputSize, inputSize)
-
-        for (pixel in intValues) {
-            inputBuffer.putFloat(((pixel shr 16) and 0xFF) / 255.0f)
-            inputBuffer.putFloat(((pixel shr 8) and 0xFF) / 255.0f)
-            inputBuffer.putFloat((pixel and 0xFF) / 255.0f)
-        }
-
-        val numAnchors = 2100
-        val outputArray = Array(1) { Array(4 + numClasses) { FloatArray(numAnchors) } }
-
+    fun detect(bitmap: Bitmap): List<MinimapDetection> {
+        val engine = interpreter ?: return emptyList()
         return try {
-            tflite.run(inputBuffer, outputArray)
-            parseYoloOutput(outputArray[0], numAnchors)
+            require(bitmap.width == 320 && bitmap.height == 320)
+            val input = engine.getInputTensor(0)
+            val output = engine.getOutputTensor(0)
+            val pixels = IntArray(320 * 320)
+            bitmap.getPixels(pixels, 0, 320, 0, 0, 320, 320)
+            val inputQuant = input.quantizationParams()
+            val inputBuffer = MinimapTensorCodec.packRgb(pixels, channelFirst, encoding(input), inputQuant.scale, inputQuant.zeroPoint)
+            require(inputBuffer.capacity() == input.numBytes())
+            val outputBuffer = ByteBuffer.allocateDirect(output.numBytes()).order(ByteOrder.nativeOrder())
+            engine.run(inputBuffer, outputBuffer)
+            val outputQuant = output.quantizationParams()
+            val values = MinimapTensorCodec.unpack(outputBuffer, encoding(output), outputQuant.scale, outputQuant.zeroPoint)
+            MinimapYoloDecoder.decode(values, output.shape(), normalizedCoordinates)
         } catch (e: Exception) {
-            Log.e("MinimapDetector", "Erro na inferência TFLite: ${e.message}")
+            status = "Minimapa: falha de inferência; detecção indisponível"
+            Log.w("MinimapDetector", status, e)
             emptyList()
         }
     }
 
-    private fun parseYoloOutput(matrix: Array<FloatArray>, numAnchors: Int): List<MinimapDetection> {
-        val rawDetections = mutableListOf<MinimapDetection>()
-        for (a in 0 until numAnchors) {
-            var bestClass = -1
-            var bestScore = confidenceThreshold
-            for (c in 0 until numClasses) {
-                val score = matrix[4 + c][a]
-                if (score > bestScore) {
-                    bestScore = score
-                    bestClass = c
-                }
-            }
-            if (bestClass != -1) {
-                val xNorm = (matrix[0][a] / inputSize).coerceIn(0f, 1f)
-                val yNorm = (matrix[1][a] / inputSize).coerceIn(0f, 1f)
-                val entity = when (bestClass) {
-                    0 -> MinimapEntityClass.ALIADO
-                    1 -> MinimapEntityClass.INIMIGO
-                    2 -> MinimapEntityClass.OBJETIVO_ATIVO
-                    else -> MinimapEntityClass.ONDA_MINIONS
-                }
-                rawDetections.add(MinimapDetection(entity, bestScore, xNorm, yNorm))
-            }
-        }
-        return applySimpleNms(rawDetections, minDistance = 0.04f)
-    }
-
-    private fun applySimpleNms(items: List<MinimapDetection>, minDistance: Float): List<MinimapDetection> {
-        val sorted = items.sortedByDescending { it.confidence }
-        val kept = mutableListOf<MinimapDetection>()
-        for (candidate in sorted) {
-            val overlaps = kept.any {
-                it.entityClass == candidate.entityClass &&
-                    kotlin.math.hypot(it.xNormalized - candidate.xNormalized, it.yNormalized - candidate.yNormalized) < minDistance
-            }
-            if (!overlaps) kept.add(candidate)
-        }
-        return kept
-    }
-
-    private fun loadModelFile(context: Context, assetName: String): MappedByteBuffer {
-        context.assets.openFd(assetName).use { fileDescriptor ->
-            FileInputStream(fileDescriptor.fileDescriptor).use { inputStream ->
-                return inputStream.channel.map(FileChannel.MapMode.READ_ONLY, fileDescriptor.startOffset, fileDescriptor.declaredLength)
-            }
-        }
-    }
-
-    fun close() {
-        interpreter?.close()
-    }
+    fun close() { interpreter?.close(); interpreter = null }
 }

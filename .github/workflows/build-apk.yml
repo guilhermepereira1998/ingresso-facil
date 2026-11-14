@@ -11,11 +11,20 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Testar servidor de IA
+        run: node --test cloud_backend/macro-worker.test.mjs
+      - name: Verificar script de treinamento
+        run: python3 -m py_compile ml_training/train_minimap_yolov8n.py
       - uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: temurin
       - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-35 build-tools;34.0.0'
       - uses: gradle/actions/setup-gradle@v4
       - name: Compilar, testar e verificar
         run: |
@@ -23,7 +32,7 @@ jobs:
           ./gradlew assembleDebug testDebugUnitTest lintDebug --no-daemon
       - uses: actions/upload-artifact@v4
         with:
-          name: WildRiftAICoach-1.0.1-beta
+          name: WildRiftAICoach-1.0.2-beta
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
       - uses: actions/upload-artifact@v4

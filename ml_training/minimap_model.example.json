@@ -1,0 +1,6 @@
+{
+  "schemaVersion": 1,
+  "classes": ["aliado", "inimigo", "objetivo_ativo", "onda_minions"],
+  "coordinates": "normalized",
+  "inputRange": "zero_to_one"
+}

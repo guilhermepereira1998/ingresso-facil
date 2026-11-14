@@ -1,0 +1,4 @@
+# Configure locally or in the provider's secret store. Never commit real values.
+GEMINI_API_KEY=
+GEMINI_MODEL=
+COACH_ACCESS_TOKEN=
