@@ -20,8 +20,12 @@ data class CloudMacroRequest(
 )
 
 @Serializable
+data class CloudTokenUsage(val inputTokens: Long = 0, val outputTokens: Long = 0, val totalTokens: Long = 0)
+
+@Serializable
 data class CloudMacroResponse(
-    val callout: String = ""
+    val callout: String = "",
+    val usage: CloudTokenUsage? = null
 )
 
 class CloudMacroClient {
@@ -93,6 +97,7 @@ Regras estritas:
                     val parsed = json.decodeFromString<CloudMacroResponse>(body)
                     val trimmed = parsed.callout.trim()
                     status = if (trimmed.isBlank()) "Conectada; sem orientação nesta leitura" else "Conectada"
+                    parsed.usage?.let { status += " | tokens: ${it.inputTokens} entrada / ${it.outputTokens} saída" }
                     if (trimmed.isNotEmpty() && trimmed.split(Regex("\\s+")).size <= 12) {
                         TacticalCallout(
                             ruleId = "CLOUD_LLM_MACRO",

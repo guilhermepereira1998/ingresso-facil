@@ -110,6 +110,62 @@
                 android:textColorHint="@color/text_secondary" />
         </LinearLayout>
 
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/bg_panel"
+            android:orientation="vertical"
+            android:padding="16dp">
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="3. Material para treinar a IA"
+                android:textColor="@color/gold_accent"
+                android:textSize="17sp"
+                android:textStyle="bold" />
+            <com.google.android.material.switchmaterial.SwitchMaterial
+                android:id="@+id/swSaveTraining"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Salvar PNG a cada 5s enquanto o coach estiver ativo"
+                android:textColor="@color/text_primary" />
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="As capturas incluem a tela, o minimapa e a calibração. Os arquivos ficam no aparelho. Exporte antes de desinstalar."
+                android:textColor="@color/text_secondary"
+                android:textSize="12sp" />
+            <Button
+                android:id="@+id/btnSaveFrame"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Salvar próxima captura da partida" />
+            <Button
+                android:id="@+id/btnStartRecording"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Gravar partida em MP4 (modo de coleta)" />
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Gravar vídeo encerra o coach. MP4 sem áudio, até 1280px/24fps; cerca de 30 MB/min. Girar a tela cria outro segmento. Use Encerrar para concluir o vídeo."
+                android:textColor="@color/text_secondary"
+                android:textSize="12sp" />
+            <Button
+                android:id="@+id/btnExportTraining"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Exportar material de treino (.ZIP)" />
+            <TextView
+                android:id="@+id/tvCollectionStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Nenhuma coleta iniciada"
+                android:textColor="@color/hextech_blue"
+                android:textSize="12sp" />
+        </LinearLayout>
+
         <Button
             android:id="@+id/btnOpenCalibration"
             android:layout_width="match_parent"
@@ -136,7 +192,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:backgroundTint="@color/danger_red"
-            android:text="Encerrar Serviços"
+            android:text="Encerrar coach / gravação"
             android:textColor="@color/text_primary" />
 
         <TextView

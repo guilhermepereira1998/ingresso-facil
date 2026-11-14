@@ -47,6 +47,12 @@
             android:exported="false"
             android:foregroundServiceType="mediaProjection" />
 
+        <service
+            android:name=".capture.MatchRecordingService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="mediaProjection" />
+
         <!-- Serviço de Overlay Flutuante Não Intrusivo -->
         <service
             android:name=".overlay.FloatingOverlayService"

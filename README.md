@@ -1,4 +1,4 @@
-# Wild Rift AI Coach — Android beta 1.0.2
+# Wild Rift AI Coach — Android beta 1.0.3
 
 Aplicativo Android em Kotlin, Android 8.0 ou superior (minSdk 26, targetSdk 35).
 
@@ -12,6 +12,10 @@ Aplicativo Android em Kotlin, Android 8.0 ou superior (minSdk 26, targetSdk 35).
 6. Toque na bolha para pausar/retomar. Mantenha pressionado e solte para abrir os controles e testar a voz. Para uma nova partida, encerre e inicie uma nova sessão de captura.
 
 A voz depende de um mecanismo Android TextToSpeech com português instalado. As permissões são solicitadas pelo sistema; o aplicativo não concede permissões por conta própria.
+
+## Material de treino e orçamento
+
+A beta 1.0.3 inclui capturas PNG manuais/automáticas, minimapa e metadados, gravação MP4 em modo próprio de coleta e exportação ZIP. O vídeo encerra o coach; não há análise simultânea nesse modo. Leia [COLETA_TREINAMENTO.md](COLETA_TREINAMENTO.md) para usar e exportar os dados, e [CUSTOS_GEMINI_MVP.md](CUSTOS_GEMINI_MVP.md) para os cálculos e fontes oficiais de custo.
 
 ## O que esta versão contém
 
@@ -54,7 +58,7 @@ APK: `app/build/outputs/apk/debug/app-debug.apk`.
 
 O backend pode ser testado sem credenciais com `node --test cloud_backend/macro-worker.test.mjs`.
 
-No GitHub Actions, o workflow **Wild Rift AI Coach - APK e testes** gera o artefato **WildRiftAICoach-1.0.2-beta** e relatórios de validação.
+No GitHub Actions, o workflow **Wild Rift AI Coach - APK e testes** gera o artefato **WildRiftAICoach-1.0.3-beta** e relatórios de validação.
 
 ## Referências da implementação
 

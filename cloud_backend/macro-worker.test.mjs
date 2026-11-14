@@ -50,3 +50,12 @@ test('health response contains no credentials', async () => {
   const response = await createHandler()(new Request('https://coach.example/health'), env);
   const body = await response.text(); assert.ok(body.includes('true')); assert.ok(!body.includes(env.GEMINI_API_KEY));
 });
+
+test('usage reports output including thinking tokens for cost measurement', async () => {
+  const handler = createHandler(async () => Response.json({
+    candidates: [{ content: { parts: [{ text: '{"callout":""}' }] } }],
+    usageMetadata: { promptTokenCount: 600, candidatesTokenCount: 30, thoughtsTokenCount: 10, totalTokenCount: 640 }
+  }));
+  const result = await (await handler(request(), env)).json();
+  assert.deepEqual(result.usage, { inputTokens: 600, outputTokens: 40, totalTokens: 640 });
+});

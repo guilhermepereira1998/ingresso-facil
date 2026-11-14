@@ -72,7 +72,14 @@ export function createHandler(upstream = fetch) {
       if (typeof parsed.callout !== 'string') return json({ error: 'invalid_provider_response' }, 502);
       const callout = parsed.callout.trim().replace(/\s+/g, ' ');
       if (callout.length > 240 || (callout && callout.split(' ').length > 12)) return json({ error: 'callout_too_long' }, 502);
-      return json({ callout });
+      const meta = payload.usageMetadata;
+      const safeCount = value => Number.isSafeInteger(value) && value >= 0 ? value : 0;
+      const usage = meta ? {
+        inputTokens: safeCount(meta.promptTokenCount),
+        outputTokens: safeCount(meta.candidatesTokenCount) + safeCount(meta.thoughtsTokenCount),
+        totalTokens: safeCount(meta.totalTokenCount)
+      } : undefined;
+      return json(usage ? { callout, usage } : { callout });
     } catch { return json({ error: controller.signal.aborted ? 'provider_timeout' : 'provider_unavailable' }, controller.signal.aborted ? 504 : 502); }
     finally { clearTimeout(timeout); }
   };
