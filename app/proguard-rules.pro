@@ -1,0 +1,2 @@
+-keep class com.wildrift.aicoach.model.** { *; }
+-keep class org.tensorflow.lite.** { *; }

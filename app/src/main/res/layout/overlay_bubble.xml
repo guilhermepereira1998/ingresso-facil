@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical">
+
+    <!-- Bolha Principal Arrastável -->
+    <FrameLayout
+        android:id="@+id/bubbleRoot"
+        android:layout_width="54dp"
+        android:layout_height="54dp"
+        android:background="@drawable/bg_bubble_active">
+
+        <ImageView
+            android:id="@+id/ivBubbleIcon"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:layout_gravity="center"
+            android:contentDescription="AI Coach Toggle"
+            android:src="@drawable/ic_coach" />
+    </FrameLayout>
+
+    <!-- Mini-Painel Translúcido (Aberto no Toque Longo) -->
+    <LinearLayout
+        android:id="@+id/miniPanel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:background="@drawable/bg_panel"
+        android:orientation="vertical"
+        android:padding="10dp"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/tvOverlayStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Coach: ATIVO (1 FPS)"
+            android:textColor="@color/hextech_blue"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/btnOverlayTestVoice"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:layout_marginTop="6dp"
+            android:text="Testar Voz TTS"
+            android:textSize="11sp" />
+
+        <Button
+            android:id="@+id/btnOverlayClose"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:layout_marginTop="4dp"
+            android:backgroundTint="@color/danger_red"
+            android:text="Encerrar Coach"
+            android:textColor="@color/text_primary"
+            android:textSize="11sp" />
+    </LinearLayout>
+</LinearLayout>

@@ -1,0 +1,9 @@
+path: ./datasets/wildrift_minimap
+train: images/train
+val: images/val
+
+names:
+  0: aliado
+  1: inimigo
+  2: objetivo_ativo
+  3: onda_minions

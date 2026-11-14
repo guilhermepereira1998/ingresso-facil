@@ -1,0 +1,9 @@
+<resources>
+    <style name="Theme.WildRiftAICoach" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/hextech_blue</item>
+        <item name="colorPrimaryVariant">@color/bg_dark</item>
+        <item name="colorOnPrimary">@color/bg_dark</item>
+        <item name="colorSecondary">@color/gold_accent</item>
+        <item name="android:windowBackground">@color/bg_dark</item>
+    </style>
+</resources>

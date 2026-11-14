@@ -1,0 +1,35 @@
+name: Wild Rift AI Coach - APK e testes
+on:
+  push:
+    branches: [main, master, wildrift-ai-coach]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: temurin
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Compilar, testar e verificar
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug testDebugUnitTest lintDebug --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: WildRiftAICoach-1.0.1-beta
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: validacao
+          path: |
+            app/build/reports/tests/
+            app/build/reports/lint-results-debug.html

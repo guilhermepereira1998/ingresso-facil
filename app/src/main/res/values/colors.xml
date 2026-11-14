@@ -1,0 +1,9 @@
+<resources>
+    <color name="bg_dark">#0A0E17</color>
+    <color name="card_dark">#131B2E</color>
+    <color name="gold_accent">#C89B3C</color>
+    <color name="hextech_blue">#0AC8B9</color>
+    <color name="danger_red">#E84057</color>
+    <color name="text_primary">#F0E6D2</color>
+    <color name="text_secondary">#A09B8C</color>
+</resources>

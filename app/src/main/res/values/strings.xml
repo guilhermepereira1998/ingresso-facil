@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Wild Rift AI Coach</string>
+    <string name="channel_capture_name">Captura Tática em Segundo Plano</string>
+    <string name="channel_overlay_name">Overlay Flutuante AI Coach</string>
+</resources>
